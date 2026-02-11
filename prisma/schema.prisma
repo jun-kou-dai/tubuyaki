@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Tubuyaki {
+  id             String   @id @default(uuid())
+  rawText        String   @map("raw_text")
+  cleanText      String?  @map("clean_text")
+  intent         String?  // JSON array: ["Problem", "Desire", "Insight", "Decision", "Note"]
+  entities       String?  // JSON: {people, places, deadlines, amounts, tools, organizations}
+  summary3lines  String?  @map("summary_3lines")
+  ideas          String?  // JSON array of up to 3 ideas
+  nextAction     String?  @map("next_action")
+  confidence     Float?   @default(0)
+  context        String?  @default("unknown") // walk / drive / unknown
+  feedback       String?  // thumbs_up / thumbs_down
+  feedbackDetail String?  @map("feedback_detail") // intent / summary / suggestion / idea
+  status         String   @default("pending") // pending / processing / done / error
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("tubuyaki")
+}
