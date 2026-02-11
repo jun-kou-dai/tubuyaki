@@ -24,13 +24,12 @@ export async function POST(request: NextRequest) {
     });
 
     // 2. LLM変換（API Keyが設定されている場合のみ）
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
       try {
         const result = await transformTubuyaki(
           rawText.trim(),
-          apiKey,
-          process.env.OPENAI_API_ENDPOINT
+          apiKey
         );
 
         const updated = await prisma.tubuyaki.update({
@@ -75,7 +74,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         ...formatRecord({ ...record, status: "pending" }),
-        warning: "OPENAI_API_KEY not configured. Raw text saved without LLM processing.",
+        warning: "GEMINI_API_KEY not configured. Raw text saved without LLM processing.",
       },
       { status: 201 }
     );

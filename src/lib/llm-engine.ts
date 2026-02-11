@@ -83,41 +83,42 @@ const SYSTEM_PROMPT = `あなたは「つぶやき変換エンジン」です。
 
 export async function transformTubuyaki(
   rawText: string,
-  apiKey: string,
-  apiEndpoint?: string
+  apiKey: string
 ): Promise<TransformResult> {
-  const endpoint =
-    apiEndpoint || "https://api.openai.com/v1/chat/completions";
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: rawText },
+      contents: [
+        {
+          parts: [
+            { text: `${SYSTEM_PROMPT}\n\n---\n\nユーザーの入力:\n${rawText}` },
+          ],
+        },
       ],
-      temperature: 0.3,
-      response_format: { type: "json_object" },
+      generationConfig: {
+        temperature: 0.3,
+        responseMimeType: "application/json",
+      },
     }),
   });
 
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `LLM API error: ${response.status} ${response.statusText} - ${errorBody}`
+      `Gemini API error: ${response.status} ${response.statusText} - ${errorBody}`
     );
   }
 
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!content) {
-    throw new Error("LLM returned empty response");
+    throw new Error("Gemini returned empty response");
   }
 
   const parsed = JSON.parse(content);
