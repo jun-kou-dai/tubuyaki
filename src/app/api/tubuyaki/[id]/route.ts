@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { transformTubuyaki } from "@/lib/llm-engine";
 
 // GET: 個別取得
 export async function GET(
@@ -24,7 +25,7 @@ export async function GET(
   }
 }
 
-// PATCH: フィードバック更新
+// PATCH: フィードバック更新 or テキスト修正＋再変換
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -32,8 +33,58 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { feedback, feedbackDetail } = body;
+    const { feedback, feedbackDetail, rawText, reprocess } = body;
 
+    // テキスト修正＋再変換モード
+    if (reprocess && typeof rawText === "string" && rawText.trim()) {
+      // まず processing 状態に更新
+      await prisma.tubuyaki.update({
+        where: { id },
+        data: {
+          rawText: rawText.trim(),
+          status: "processing",
+        },
+      });
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        const record = await prisma.tubuyaki.update({
+          where: { id },
+          data: { status: "pending" },
+        });
+        return NextResponse.json(formatRecord(record));
+      }
+
+      try {
+        const result = await transformTubuyaki(rawText.trim(), apiKey);
+        const record = await prisma.tubuyaki.update({
+          where: { id },
+          data: {
+            cleanText: result.cleanText,
+            intent: JSON.stringify(result.intent),
+            entities: JSON.stringify(result.entities),
+            summary3lines: result.summary3lines,
+            ideas: JSON.stringify(result.ideas),
+            nextAction: result.nextAction,
+            confidence: result.confidence,
+            context: result.context,
+            feedback: null,
+            feedbackDetail: null,
+            status: "done",
+          },
+        });
+        return NextResponse.json(formatRecord(record));
+      } catch (llmError) {
+        console.error("LLM reprocess error:", llmError);
+        const record = await prisma.tubuyaki.update({
+          where: { id },
+          data: { status: "error" },
+        });
+        return NextResponse.json(formatRecord(record));
+      }
+    }
+
+    // フィードバックモード
     if (feedback && !["thumbs_up", "thumbs_down"].includes(feedback)) {
       return NextResponse.json(
         { error: "feedback must be thumbs_up or thumbs_down" },

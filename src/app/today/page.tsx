@@ -55,6 +55,36 @@ export default function TodayPage() {
     }
   };
 
+  const handleReprocess = async (id: string, rawText: string) => {
+    // 即座にUI上で processing 状態にする
+    setRecords((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, status: "processing" as const, rawText } : r
+      )
+    );
+
+    try {
+      const res = await fetch(`/api/tubuyaki/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rawText, reprocess: true }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setRecords((prev) =>
+          prev.map((r) => (r.id === id ? updated : r))
+        );
+      } else {
+        // エラー時はリロード
+        fetchToday();
+      }
+    } catch (err) {
+      console.error("Failed to reprocess:", err);
+      fetchToday();
+    }
+  };
+
   if (loading) {
     return (
       <div className="pt-8">
@@ -105,6 +135,7 @@ export default function TodayPage() {
               key={record.id}
               record={record}
               onFeedback={handleFeedback}
+              onReprocess={handleReprocess}
             />
           ))}
         </div>

@@ -6,12 +6,15 @@ import { TubuyakiRecord, INTENT_COLORS, IntentTag } from "@/types/tubuyaki";
 interface TubuyakiCardProps {
   record: TubuyakiRecord;
   onFeedback?: (id: string, feedback: string, detail?: string) => void;
+  onReprocess?: (id: string, rawText: string) => void;
 }
 
-export default function TubuyakiCard({ record, onFeedback }: TubuyakiCardProps) {
+export default function TubuyakiCard({ record, onFeedback, onReprocess }: TubuyakiCardProps) {
   const [showIdeas, setShowIdeas] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const [showFeedbackDetail, setShowFeedbackDetail] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(record.rawText);
 
   const summaryLines = record.summary3lines?.split("\n").filter(Boolean) || [];
 
@@ -135,7 +138,7 @@ export default function TubuyakiCard({ record, onFeedback }: TubuyakiCardProps) 
         </div>
       )}
 
-      {/* 生テキスト（さらに折りたたみ） */}
+      {/* 生テキスト（編集・再変換可能） */}
       <div className="mb-4">
         <button
           onClick={() => setShowRaw(!showRaw)}
@@ -157,9 +160,57 @@ export default function TubuyakiCard({ record, onFeedback }: TubuyakiCardProps) 
           生テキスト
         </button>
         {showRaw && (
-          <p className="mt-2 pl-5 text-xs text-gray-400 whitespace-pre-wrap leading-relaxed">
-            {record.rawText}
-          </p>
+          <div className="mt-2 pl-5">
+            {editing ? (
+              <div className="space-y-2">
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-200 p-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (editText.trim() && onReprocess) {
+                        onReprocess(record.id, editText.trim());
+                        setEditing(false);
+                        setShowRaw(false);
+                      }
+                    }}
+                    disabled={!editText.trim()}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 disabled:bg-gray-300 transition-colors"
+                  >
+                    再変換
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditText(record.rawText);
+                      setEditing(false);
+                    }}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                  >
+                    やめる
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2">
+                <p className="text-xs text-gray-400 whitespace-pre-wrap leading-relaxed flex-1">
+                  {record.rawText}
+                </p>
+                <button
+                  onClick={() => {
+                    setEditText(record.rawText);
+                    setEditing(true);
+                  }}
+                  className="text-xs px-2 py-1 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 shrink-0 transition-colors"
+                >
+                  修正
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
