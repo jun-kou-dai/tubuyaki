@@ -63,6 +63,34 @@ export default function SearchPage() {
     }
   };
 
+  const handleReprocess = async (id: string, rawText: string) => {
+    setResults((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, status: "processing" as const, rawText } : r
+      )
+    );
+
+    try {
+      const res = await fetch(`/api/tubuyaki/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rawText, reprocess: true }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setResults((prev) =>
+          prev.map((r) => (r.id === id ? updated : r))
+        );
+      } else {
+        handleSearch();
+      }
+    } catch (err) {
+      console.error("Failed to reprocess:", err);
+      handleSearch();
+    }
+  };
+
   return (
     <div className="pt-8">
       <h1 className="text-xl font-bold text-gray-800 mb-6">Search</h1>
@@ -154,6 +182,7 @@ export default function SearchPage() {
                 key={record.id}
                 record={record}
                 onFeedback={handleFeedback}
+                onReprocess={handleReprocess}
               />
             ))}
           </div>
