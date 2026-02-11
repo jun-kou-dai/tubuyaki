@@ -63,6 +63,17 @@ export default function SearchPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/tubuyaki/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setResults((prev) => prev.filter((r) => r.id !== id));
+      }
+    } catch (err) {
+      console.error("Failed to delete:", err);
+    }
+  };
+
   const handleReprocess = async (id: string, rawText: string) => {
     setResults((prev) =>
       prev.map((r) =>
@@ -183,6 +194,7 @@ export default function SearchPage() {
                 record={record}
                 onFeedback={handleFeedback}
                 onReprocess={handleReprocess}
+                onDelete={handleDelete}
               />
             ))}
           </div>

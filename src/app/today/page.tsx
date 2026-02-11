@@ -55,6 +55,17 @@ export default function TodayPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/tubuyaki/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setRecords((prev) => prev.filter((r) => r.id !== id));
+      }
+    } catch (err) {
+      console.error("Failed to delete:", err);
+    }
+  };
+
   const handleReprocess = async (id: string, rawText: string) => {
     // 即座にUI上で processing 状態にする
     setRecords((prev) =>
@@ -136,6 +147,7 @@ export default function TodayPage() {
               record={record}
               onFeedback={handleFeedback}
               onReprocess={handleReprocess}
+              onDelete={handleDelete}
             />
           ))}
         </div>

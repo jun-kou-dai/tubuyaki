@@ -7,9 +7,11 @@ interface TubuyakiCardProps {
   record: TubuyakiRecord;
   onFeedback?: (id: string, feedback: string, detail?: string) => void;
   onReprocess?: (id: string, rawText: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export default function TubuyakiCard({ record, onFeedback, onReprocess }: TubuyakiCardProps) {
+export default function TubuyakiCard({ record, onFeedback, onReprocess, onDelete }: TubuyakiCardProps) {
+  const [deleting, setDeleting] = useState(false);
   const [showIdeas, setShowIdeas] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const [showFeedbackDetail, setShowFeedbackDetail] = useState(false);
@@ -38,7 +40,28 @@ export default function TubuyakiCard({ record, onFeedback, onReprocess }: Tubuya
         <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
         <div className="h-3 bg-gray-200 rounded w-5/6 mb-2"></div>
         <div className="h-3 bg-gray-200 rounded w-4/6"></div>
-        <p className="text-sm text-gray-400 mt-4">AI変換中...</p>
+        <div className="flex items-center mt-4">
+          <p className="text-sm text-gray-400">AI変換中...</p>
+          <button
+            onClick={async () => {
+              if (!onDelete) return;
+              if (!window.confirm("処理中ですが、このつぶやきを削除しますか？")) return;
+              setDeleting(true);
+              try {
+                await onDelete(record.id);
+              } finally {
+                setDeleting(false);
+              }
+            }}
+            disabled={deleting || !onDelete}
+            className="ml-auto text-gray-300 hover:text-red-400 transition-colors disabled:opacity-30"
+            title="削除"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
       </div>
     );
   }
@@ -56,6 +79,25 @@ export default function TubuyakiCard({ record, onFeedback, onReprocess }: Tubuya
               minute: "2-digit",
             })}
           </time>
+          <button
+            onClick={async () => {
+              if (!onDelete) return;
+              if (!window.confirm("このつぶやきを削除しますか？")) return;
+              setDeleting(true);
+              try {
+                await onDelete(record.id);
+              } finally {
+                setDeleting(false);
+              }
+            }}
+            disabled={deleting || !onDelete}
+            className="ml-auto text-gray-300 hover:text-red-400 transition-colors disabled:opacity-30"
+            title="削除"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
         </div>
         <p className="text-gray-600 text-sm whitespace-pre-wrap">{record.rawText}</p>
       </div>
@@ -237,7 +279,7 @@ export default function TubuyakiCard({ record, onFeedback, onReprocess }: Tubuya
               👎
             </button>
             {record.confidence !== null && record.confidence < 0.5 && (
-              <span className="text-xs text-orange-500 ml-auto">
+              <span className="text-xs text-orange-500">
                 自信度低 ({Math.round(record.confidence * 100)}%)
               </span>
             )}
@@ -268,6 +310,25 @@ export default function TubuyakiCard({ record, onFeedback, onReprocess }: Tubuya
             </button>
           </div>
         )}
+        <button
+          onClick={async () => {
+            if (!onDelete) return;
+            if (!window.confirm("このつぶやきを削除しますか？")) return;
+            setDeleting(true);
+            try {
+              await onDelete(record.id);
+            } finally {
+              setDeleting(false);
+            }
+          }}
+          disabled={deleting || !onDelete}
+          className="ml-auto text-gray-300 hover:text-red-400 transition-colors disabled:opacity-30"
+          title="削除"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
       </div>
     </div>
   );
