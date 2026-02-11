@@ -127,6 +127,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const record = await prisma.tubuyaki.findUnique({ where: { id } });
+    if (!record) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     await prisma.tubuyaki.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {
