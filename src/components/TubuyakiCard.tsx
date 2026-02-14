@@ -17,6 +17,7 @@ export default function TubuyakiCard({ record, onFeedback, onReprocess, onDelete
   const [showFeedbackDetail, setShowFeedbackDetail] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(record.rawText);
+  const [retrying, setRetrying] = useState(false);
 
   const summaryLines = record.summary3lines?.split("\n").filter(Boolean) || [];
 
@@ -100,6 +101,22 @@ export default function TubuyakiCard({ record, onFeedback, onReprocess, onDelete
           </button>
         </div>
         <p className="text-gray-600 text-sm whitespace-pre-wrap">{record.rawText}</p>
+        {record.status === "error" && onReprocess && (
+          <button
+            onClick={async () => {
+              setRetrying(true);
+              try {
+                await onReprocess(record.id, record.rawText);
+              } finally {
+                setRetrying(false);
+              }
+            }}
+            disabled={retrying}
+            className="mt-3 text-sm px-4 py-2 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 disabled:bg-gray-300 transition-colors"
+          >
+            {retrying ? "変換中..." : "再変換する"}
+          </button>
+        )}
       </div>
     );
   }
